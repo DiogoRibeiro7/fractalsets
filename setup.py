@@ -1,0 +1,63 @@
+"""Setup script for FractalSets package."""
+
+from setuptools import setup, find_packages
+
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+setup(
+    name="fractalsets",
+    version="1.0.0",
+    author="FractalSets Development Team",
+    author_email="dev@fractalsets.org",
+    description="A comprehensive Python package for generating and visualizing Mandelbrot and Julia set fractals",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/yourusername/fractalsets",
+    packages=find_packages(),
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Education",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Visualization",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+    ],
+    python_requires=">=3.8",
+    install_requires=[
+        "numpy>=1.20.0",
+        "matplotlib>=3.3.0",
+        "Pillow>=8.0.0",
+    ],
+    extras_require={
+        "performance": ["numba>=0.54.0"],
+        "dev": [
+            "pytest>=6.0",
+            "pytest-cov>=2.0",
+            "black>=21.0",
+            "flake8>=3.9",
+            "sphinx>=4.0",
+        ],
+        "all": [
+            "numba>=0.54.0",
+            "pytest>=6.0",
+            "pytest-cov>=2.0",
+            "black>=21.0",
+            "flake8>=3.9",
+            "sphinx>=4.0",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "fractalsets-demo=fractalsets.examples.advanced_examples:run_all_examples",
+            "fractalsets-gallery=fractalsets.examples.gallery:FractalGallery.showcase",
+        ],
+    },
+    include_package_data=True,
+    zip_safe=False,
+)
