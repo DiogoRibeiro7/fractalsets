@@ -1,0 +1,105 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: FractalSets
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Diogo
+    family-names: Ribeiro
+    email: dfr@esmad.ipp.pt
+    orcid: 'https://orcid.org/0009-0001-2022-7072'
+    affiliation: ESMAD - Polytechnic Institute of Porto
+repository-code: 'https://github.com/DiogoRibeiro7/fractalsets'
+url: 'https://github.com/DiogoRibeiro7/fractalsets'
+abstract: >-
+  A comprehensive Python package for generating and
+  visualizing Mandelbrot and Julia set fractals. FractalSets
+  provides high-performance, Numba-optimized algorithms for
+  fractal generation, extensive visualization capabilities
+  with multiple colormaps, and a gallery of famous fractals.
+  Originally translated from R implementation, this package
+  offers both simple interfaces for beginners and advanced
+  features for researchers in computational mathematics,
+  chaos theory, and algorithmic art.
+keywords:
+  - fractal
+  - mandelbrot
+  - julia-set
+  - mathematics
+  - visualization
+  - computational-geometry
+  - python
+  - numpy
+  - matplotlib
+  - numba
+  - scientific-computing
+  - complex-numbers
+  - chaos-theory
+  - fractal-generation
+  - algorithmic-art
+license: MIT
+version: 1.0.0
+date-released: '2024-12-19'
+identifiers:
+  - type: url
+    value: 'https://github.com/DiogoRibeiro7/fractalsets'
+    description: GitHub repository
+preferred-citation:
+  type: software
+  authors:
+    - given-names: Diogo
+      family-names: Ribeiro
+      email: your.email@example.com
+      orcid: 'https://orcid.org/0009-0001-2022-7072'
+  title: 'FractalSets: A Python Package for Fractal Generation and Visualization'
+  version: 1.0.0
+  year: 2024
+  url: 'https://github.com/DiogoRibeiro7/fractalsets'
+  repository-code: 'https://github.com/DiogoRibeiro7/fractalsets'
+  license: MIT
+  abstract: >-
+    FractalSets is a comprehensive Python package for generating
+    and visualizing Mandelbrot and Julia set fractals with
+    high-performance Numba optimization and extensive
+    visualization tools.
+references:
+  - type: article
+    authors:
+      - family-names: Mandelbrot
+        given-names: Benoit B.
+    title: >-
+      Fractal aspects of the iteration of z → λz(1-z) for
+      complex λ and z
+    journal: Annals of the New York Academy of Sciences
+    volume: 357
+    issue: 1
+    start: 249
+    end: 259
+    year: 1980
+    doi: 10.1111/j.1749-6632.1980.tb29690.x
+  - type: article
+    authors:
+      - family-names: Julia
+        given-names: Gaston
+    title: >-
+      Mémoire sur l'itération des fonctions rationnelles
+    journal: Journal de Mathématiques Pures et Appliquées
+    volume: 8
+    start: 47
+    end: 245
+    year: 1918
+  - type: book
+    authors:
+      - family-names: Peitgen
+        given-names: Heinz-Otto
+      - family-names: Saupe
+        given-names: Dietmar
+    title: The Science of Fractal Images
+    publisher:
+      name: Springer Science & Business Media
+    year: 1988
+    isbn: 978-1-4612-3784-6
