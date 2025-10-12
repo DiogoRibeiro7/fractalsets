@@ -3,6 +3,8 @@
 A comprehensive, high-performance Python package for generating and visualizing Mandelbrot and Julia set fractals.
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Monthly Reminder](https://github.com/DiogoRibeiro7/fractalsets/actions/workflows/monthly-reminder.yml/badge.svg)](https://github.com/DiogoRibeiro7/fractalsets/actions/workflows/monthly-reminder.yml)
+
 
 ## Features
 
