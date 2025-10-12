@@ -96,6 +96,18 @@ jobs:
           title: "📅 Monthly maintenance reminder"
           content-filepath: .github/reminder-message.md
           labels: maintenance, reminder
+          assignees: DiogoRibeiro7
+
+      # Assign to user if issue already exists
+      - name: Assign issue to maintainer
+        if: steps.find_issue.outputs.issue_number != ''
+        run: |
+          ISSUE_NUMBER="${{ steps.find_issue.outputs.issue_number }}"
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"assignees":["DiogoRibeiro7"]}' \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${ISSUE_NUMBER}/assignees"
 
       # 4️⃣ Post comment with delta stats
       - name: Add monthly summary comment
