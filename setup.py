@@ -66,6 +66,7 @@ setup(
         "console_scripts": [
             "fractalsets-demo=fractalsets.examples.advanced_examples:run_all_examples",
             "fractalsets-gallery=fractalsets.examples.gallery:FractalGallery.showcase",
+            "fractalsets-render=fractalsets.cli:main",
         ],
     },
     include_package_data=True,

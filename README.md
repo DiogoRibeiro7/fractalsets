@@ -90,6 +90,12 @@ gen.generate(centre=-0.5 + 0j, L=3.0)
 export_fractal(gen.get_image(), "mandelbrot.png", cmap="fractal_default", dpi=300)
 ```
 
+Render from the command line:
+
+```bash
+fractalsets-render --fractal burning-ship --output burning_ship.png --width 1600 --height 1200 --max-iter 512 --centre-real -1.75 --centre-imag -0.03 --L 0.08 --cmap fractal_fire
+```
+
 Launch the GUI explorer:
 
 ```python
@@ -135,6 +141,8 @@ dimension, details = analyzer.calculate_hausdorff_dimension(image)
   Tk GUI entry points such as `launch_gui`.
 - `fractalsets.visualization`
   Plotting, colormaps, animation, and 3D rendering exports.
+- `fractalsets.cli`
+  Command-line rendering entry point used by `fractalsets-render`.
 
 ## Package Layout
 
