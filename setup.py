@@ -36,6 +36,12 @@ setup(
     ],
     extras_require={
         "performance": ["numba>=0.59,<0.62"],
+        "analysis": [
+            "scipy>=1.10",
+            "scikit-learn>=1.3",
+            "scikit-image>=0.21",
+            "opencv-python>=4.8",
+        ],
         "dev": [
             "pytest>=6.0",
             "pytest-cov>=2.0",
@@ -45,6 +51,10 @@ setup(
         ],
         "all": [
             "numba>=0.59,<0.62",
+            "scipy>=1.10",
+            "scikit-learn>=1.3",
+            "scikit-image>=0.21",
+            "opencv-python>=4.8",
             "pytest>=6.0",
             "pytest-cov>=2.0",
             "black>=21.0",
