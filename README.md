@@ -96,6 +96,18 @@ Render from the command line:
 fractalsets-render --fractal burning-ship --output burning_ship.png --width 1600 --height 1200 --max-iter 512 --centre-real -1.75 --centre-imag -0.03 --L 0.08 --cmap fractal_fire
 ```
 
+List available presets:
+
+```bash
+fractalsets-render --fractal burning-ship --list-presets
+```
+
+Render a named preset:
+
+```bash
+fractalsets-render --fractal mandelbrot --preset seahorse_valley --output seahorse.png --width 1600 --height 1600 --max-iter 512 --cmap fractal_fire
+```
+
 Launch the GUI explorer:
 
 ```python

@@ -4,6 +4,7 @@ import argparse
 from typing import Iterable, Optional
 
 from .core.generators import BurningShipGenerator, JuliaGenerator, MandelbrotGenerator
+from .examples.gallery import FractalGallery
 from .utils.export import export_fractal
 
 
@@ -16,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="mandelbrot",
         help="Fractal type to render.",
     )
-    parser.add_argument("--output", required=True, help="Output image path.")
+    parser.add_argument("--output", help="Output image path.")
     parser.add_argument("--width", type=int, default=800, help="Output width in pixels.")
     parser.add_argument("--height", type=int, default=800, help="Output height in pixels.")
     parser.add_argument(
@@ -45,9 +46,24 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable smooth iteration coloring.",
     )
+    parser.add_argument("--preset", help="Named preset for the selected fractal type.")
+    parser.add_argument(
+        "--list-presets",
+        action="store_true",
+        help="List presets for the selected fractal type and exit.",
+    )
     parser.add_argument("--julia-real", type=float, help="Julia constant real part.")
     parser.add_argument("--julia-imag", type=float, help="Julia constant imaginary part.")
     return parser
+
+
+def _get_presets_for_fractal(fractal: str):
+    """Return preset map for a fractal type."""
+    if fractal == "julia":
+        return FractalGallery.JULIA_CONSTANTS
+    if fractal == "burning-ship":
+        return FractalGallery.BURNING_SHIP_LOCATIONS
+    return FractalGallery.MANDELBROT_LOCATIONS
 
 
 def _validate_bounds(args: argparse.Namespace):
@@ -56,6 +72,17 @@ def _validate_bounds(args: argparse.Namespace):
     provided = [value is not None for value in bounds]
     if any(provided) and not all(provided):
         raise ValueError("Explicit bounds require --xmin, --xmax, --ymin, and --ymax together.")
+
+
+def _resolve_preset(args: argparse.Namespace):
+    """Resolve an optional preset name."""
+    if not args.preset:
+        return None
+
+    presets = _get_presets_for_fractal(args.fractal)
+    if args.preset not in presets:
+        raise ValueError(f"Unknown preset '{args.preset}' for fractal type '{args.fractal}'.")
+    return presets[args.preset]
 
 
 def _build_generator(args: argparse.Namespace):
@@ -69,9 +96,16 @@ def _build_generator(args: argparse.Namespace):
     }
 
     if args.fractal == "julia":
-        if args.julia_real is None or args.julia_imag is None:
-            raise ValueError("Julia rendering requires --julia-real and --julia-imag.")
-        return JuliaGenerator(C=complex(args.julia_real, args.julia_imag), **common)
+        preset = _resolve_preset(args)
+        if preset is not None:
+            constant = preset
+        elif args.julia_real is None or args.julia_imag is None:
+            raise ValueError(
+                "Julia rendering requires --julia-real and --julia-imag, or a Julia --preset."
+            )
+        else:
+            constant = complex(args.julia_real, args.julia_imag)
+        return JuliaGenerator(C=constant, **common)
 
     if args.fractal == "burning-ship":
         return BurningShipGenerator(**common)
@@ -90,14 +124,32 @@ def _generate_image(generator, args: argparse.Namespace):
             ymax=args.ymax,
         )
 
+    preset = _resolve_preset(args)
+    if preset is not None:
+        if args.fractal == "julia":
+            return generator.generate(centre=0 + 0j, L=3.0)
+        return generator.generate(centre=preset["centre"], L=preset["L"])
+
     centre = complex(args.centre_real, args.centre_imag)
     return generator.generate(centre=centre, L=args.L)
+
+
+def _list_presets(args: argparse.Namespace):
+    """Print presets for the selected fractal type."""
+    for name in sorted(_get_presets_for_fractal(args.fractal)):
+        print(name)
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
     """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
+
+    if args.list_presets:
+        _list_presets(args)
+        return 0
+    if not args.output:
+        parser.error("--output is required unless --list-presets is used.")
 
     try:
         generator = _build_generator(args)

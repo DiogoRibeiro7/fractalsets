@@ -15,6 +15,7 @@ def test_parser_defaults():
     assert args.height == 800
     assert args.max_iter == 256
     assert args.cmap == "fractal_default"
+    assert args.output == "out.png"
 
 
 def test_main_renders_mandelbrot(monkeypatch):
@@ -143,3 +144,81 @@ def test_main_rejects_missing_julia_constant():
     """CLI should reject Julia renders without a constant."""
     with pytest.raises(SystemExit):
         main(["--fractal", "julia", "--output", "julia.png"])
+
+
+def test_main_lists_presets(capsys):
+    """CLI should list presets for the selected fractal type."""
+    exit_code = main(["--fractal", "burning-ship", "--list-presets"])
+
+    output = capsys.readouterr().out.strip().splitlines()
+    assert exit_code == 0
+    assert output == ["classic_ship", "full_set", "harbor"]
+
+
+def test_main_renders_burning_ship_preset(monkeypatch):
+    """CLI should render named presets for preset-aware fractals."""
+    calls = {}
+
+    original_generate = BurningShipGenerator.generate
+
+    def tracking_generate(self, **kwargs):
+        calls.update(kwargs)
+        return original_generate(self, **kwargs)
+
+    monkeypatch.setattr(BurningShipGenerator, "generate", tracking_generate)
+    monkeypatch.setattr("fractalsets.cli.export_fractal", lambda *args, **kwargs: None)
+
+    exit_code = main(
+        [
+            "--fractal",
+            "burning-ship",
+            "--preset",
+            "classic_ship",
+            "--output",
+            "ship.png",
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["centre"] == -1.75 - 0.03j
+    assert calls["L"] == 0.08
+
+
+def test_main_renders_julia_preset(monkeypatch):
+    """CLI should allow Julia presets instead of explicit constants."""
+    created = {}
+
+    original_init = JuliaGenerator.__init__
+
+    def tracking_init(self, C, width=800, height=800, max_iter=256, smooth=True):
+        created["C"] = C
+        original_init(self, C, width=width, height=height, max_iter=max_iter, smooth=smooth)
+
+    monkeypatch.setattr(JuliaGenerator, "__init__", tracking_init)
+    monkeypatch.setattr("fractalsets.cli.export_fractal", lambda *args, **kwargs: None)
+
+    exit_code = main(
+        [
+            "--fractal",
+            "julia",
+            "--preset",
+            "dragon",
+            "--output",
+            "dragon.png",
+        ]
+    )
+
+    assert exit_code == 0
+    assert created["C"] == -0.8 + 0.156j
+
+
+def test_main_rejects_unknown_preset():
+    """CLI should reject presets that are not valid for the chosen fractal."""
+    with pytest.raises(SystemExit):
+        main(["--fractal", "mandelbrot", "--preset", "dragon", "--output", "out.png"])
+
+
+def test_main_requires_output_for_rendering():
+    """CLI should still require an output path for rendering commands."""
+    with pytest.raises(SystemExit):
+        main([])
