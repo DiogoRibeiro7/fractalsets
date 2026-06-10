@@ -5,9 +5,12 @@ Unit tests for core iteration functions.
 import pytest
 import numpy as np
 from fractalsets.core.iterators import (
+    burning_ship_iterate,
+    compute_burning_ship_array,
     mandel_iterate,
     julia_iterate,
     smooth_mandel_iterate,
+    smooth_burning_ship_iterate,
     smooth_julia_iterate,
     compute_mandelbrot_array,
     compute_julia_array
@@ -65,6 +68,25 @@ class TestJuliaIteration:
         assert isinstance(result, float)
 
 
+class TestBurningShipIteration:
+    """Test Burning Ship iteration functions."""
+
+    def test_burning_ship_escape(self):
+        """Test that a point outside escapes."""
+        result = burning_ship_iterate(2+2j, max_iter=100)
+        assert result < 100
+
+    def test_burning_ship_max_iter(self):
+        """Test Burning Ship iteration range."""
+        result = burning_ship_iterate(-1.8-0.01j, max_iter=100)
+        assert 0 <= result <= 100
+
+    def test_smooth_burning_ship_iterate(self):
+        """Test smooth Burning Ship iteration returns float."""
+        result = smooth_burning_ship_iterate(1+1j, max_iter=100)
+        assert isinstance(result, float)
+
+
 class TestArrayComputation:
     """Test array computation functions."""
     
@@ -100,3 +122,19 @@ class TestArrayComputation:
             50, 50, -2, 2, -2, 2, C, max_iter=100, smooth=True
         )
         assert result.dtype == np.float64
+
+    def test_compute_burning_ship_array_shape(self):
+        """Test Burning Ship array has correct shape."""
+        width, height = 100, 100
+        result = compute_burning_ship_array(
+            width, height, -2.2, 1.2, -2.5, 1.5, max_iter=50
+        )
+        assert result.shape == (height, width)
+
+    def test_compute_burning_ship_array_values(self):
+        """Test Burning Ship array values are in valid range."""
+        result = compute_burning_ship_array(
+            50, 50, -2.2, 1.2, -2.5, 1.5, max_iter=100
+        )
+        assert np.all(result >= 0)
+        assert np.all(result <= 100)

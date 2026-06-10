@@ -4,7 +4,11 @@ Unit tests for generator classes.
 
 import pytest
 import numpy as np
-from fractalsets.core.generators import MandelbrotGenerator, JuliaGenerator
+from fractalsets.core.generators import (
+    BurningShipGenerator,
+    JuliaGenerator,
+    MandelbrotGenerator,
+)
 
 
 class TestMandelbrotGenerator:
@@ -94,6 +98,37 @@ class TestJuliaGenerator:
         img2 = gen2.generate(centre=0+0j, L=3.0)
         
         assert not np.array_equal(img1, img2)
+
+
+class TestBurningShipGenerator:
+    """Test BurningShipGenerator class."""
+
+    def test_initialization(self):
+        """Test Burning Ship generator initialization."""
+        gen = BurningShipGenerator(width=300, height=300, max_iter=128)
+        assert gen.width == 300
+        assert gen.height == 300
+        assert gen.max_iter == 128
+
+    def test_generate(self):
+        """Test Burning Ship generation."""
+        gen = BurningShipGenerator(width=120, height=120)
+        result = gen.generate(centre=-0.5-0.5j, L=4.0)
+
+        assert result.shape == (120, 120)
+        assert gen.image is not None
+
+    def test_zoom(self):
+        """Test Burning Ship zoom functionality."""
+        gen = BurningShipGenerator(width=100, height=100)
+        gen.generate(centre=-0.5-0.5j, L=4.0)
+
+        initial_bounds = gen.bounds
+        gen.zoom(centre=-1.75-0.03j, zoom_factor=2.0)
+
+        new_width = gen.bounds[1] - gen.bounds[0]
+        old_width = initial_bounds[1] - initial_bounds[0]
+        assert new_width < old_width
 
 
 if __name__ == "__main__":

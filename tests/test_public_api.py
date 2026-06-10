@@ -11,6 +11,7 @@ def test_top_level_package_imports():
 
     assert fractalsets.MandelbrotGenerator is not None
     assert fractalsets.JuliaGenerator is not None
+    assert fractalsets.BurningShipGenerator is not None
     assert fractalsets.FractalVisualizer is not None
     assert fractalsets.FractalAnimator is not None
     assert fractalsets.Fractal3DRenderer is not None
@@ -20,12 +21,14 @@ def test_top_level_package_imports():
 def test_documented_submodule_imports():
     from fractalsets.analysis import FractalAnalyzer, OrbitAnalyzer
     from fractalsets.animation import FractalAnimator
+    from fractalsets.core.generators import BurningShipGenerator
     from fractalsets.gui import FractalExplorerGUI, launch_gui
     from fractalsets.visualization import Fractal3DRenderer, FractalVisualizer
 
     assert FractalAnalyzer is not None
     assert OrbitAnalyzer is not None
     assert FractalAnimator is not None
+    assert BurningShipGenerator is not None
     assert FractalExplorerGUI is not None
     assert launch_gui is not None
     assert Fractal3DRenderer is not None

@@ -48,7 +48,7 @@ class FractalExplorerGUI:
         ttk.Label(control_frame, text="Fractal Type:").pack()
         self.fractal_type = ttk.Combobox(
             control_frame,
-            values=["Mandelbrot", "Julia"],
+            values=["Mandelbrot", "Julia", "Burning Ship"],
             state="readonly"
         )
         self.fractal_type.set("Mandelbrot")
@@ -105,19 +105,10 @@ class FractalExplorerGUI:
         self.colormap.bind("<<ComboboxSelected>>", self.on_colormap_change)
         
         # Presets
-        preset_frame = ttk.LabelFrame(control_frame, text="Presets")
-        preset_frame.pack(fill=tk.X, pady=5)
-        
-        presets = [
-            "Full Set", "Seahorse Valley", "Elephant Valley",
-            "Spiral", "Mini Mandelbrot"
-        ]
-        for preset in presets:
-            btn = ttk.Button(
-                preset_frame, text=preset,
-                command=lambda p=preset: self.load_preset(p)
-            )
-            btn.pack(fill=tk.X, pady=2)
+        self.preset_frame = ttk.LabelFrame(control_frame, text="Presets")
+        self.preset_frame.pack(fill=tk.X, pady=5)
+        self.preset_buttons = []
+        self._refresh_presets()
         
         # Action buttons
         action_frame = ttk.Frame(control_frame)
@@ -265,12 +256,17 @@ class FractalExplorerGUI:
             self.julia_frame.pack(fill=tk.X, pady=5)
         else:
             self.julia_frame.pack_forget()
-        
+
+        self._refresh_presets()
         self.reset_view()
 
     def _ensure_generator(self, width: int, height: int, max_iter: int):
         """Create or update the generator for the selected fractal type."""
-        from ..core.generators import JuliaGenerator, MandelbrotGenerator
+        from ..core.generators import (
+            BurningShipGenerator,
+            JuliaGenerator,
+            MandelbrotGenerator,
+        )
 
         fractal_type = self.fractal_type.get()
         if fractal_type == "Julia":
@@ -284,24 +280,71 @@ class FractalExplorerGUI:
                 self.generator.set_constant(C)
             return
 
+        if fractal_type == "Burning Ship":
+            if not isinstance(self.generator, BurningShipGenerator):
+                self.generator = BurningShipGenerator(
+                    width=width,
+                    height=height,
+                    max_iter=max_iter,
+                )
+            else:
+                self.generator.width = width
+                self.generator.height = height
+                self.generator.max_iter = max_iter
+            return
+
         if not isinstance(self.generator, MandelbrotGenerator):
             self.generator = MandelbrotGenerator(width=width, height=height, max_iter=max_iter)
         else:
             self.generator.width = width
             self.generator.height = height
             self.generator.max_iter = max_iter
+
+    def _get_preset_names(self):
+        """Return preset names for the selected fractal type."""
+        if self.fractal_type.get() == "Burning Ship":
+            return ["Full Set", "Classic Ship", "Harbor"]
+        return [
+            "Full Set",
+            "Seahorse Valley",
+            "Elephant Valley",
+            "Spiral",
+            "Mini Mandelbrot",
+        ]
+
+    def _refresh_presets(self):
+        """Refresh preset buttons for the selected fractal type."""
+        for button in self.preset_buttons:
+            button.destroy()
+        self.preset_buttons = []
+
+        for preset in self._get_preset_names():
+            btn = ttk.Button(
+                self.preset_frame,
+                text=preset,
+                command=lambda p=preset: self.load_preset(p)
+            )
+            btn.pack(fill=tk.X, pady=2)
+            self.preset_buttons.append(btn)
     
     def load_preset(self, preset_name: str):
         """Load a preset location."""
         from ..examples.gallery import FractalGallery
-        
-        presets = {
-            "Full Set": ('full_set', FractalGallery.MANDELBROT_LOCATIONS),
-            "Seahorse Valley": ('seahorse_valley', FractalGallery.MANDELBROT_LOCATIONS),
-            "Elephant Valley": ('elephant_valley', FractalGallery.MANDELBROT_LOCATIONS),
-            "Spiral": ('spiral', FractalGallery.MANDELBROT_LOCATIONS),
-            "Mini Mandelbrot": ('mini_mandelbrot', FractalGallery.MANDELBROT_LOCATIONS)
-        }
+
+        if self.fractal_type.get() == "Burning Ship":
+            presets = {
+                "Full Set": ("full_set", FractalGallery.BURNING_SHIP_LOCATIONS),
+                "Classic Ship": ("classic_ship", FractalGallery.BURNING_SHIP_LOCATIONS),
+                "Harbor": ("harbor", FractalGallery.BURNING_SHIP_LOCATIONS),
+            }
+        else:
+            presets = {
+                "Full Set": ('full_set', FractalGallery.MANDELBROT_LOCATIONS),
+                "Seahorse Valley": ('seahorse_valley', FractalGallery.MANDELBROT_LOCATIONS),
+                "Elephant Valley": ('elephant_valley', FractalGallery.MANDELBROT_LOCATIONS),
+                "Spiral": ('spiral', FractalGallery.MANDELBROT_LOCATIONS),
+                "Mini Mandelbrot": ('mini_mandelbrot', FractalGallery.MANDELBROT_LOCATIONS)
+            }
         
         if preset_name in presets:
             key, locations = presets[preset_name]
@@ -337,8 +380,12 @@ class FractalExplorerGUI:
     
     def reset_view(self):
         """Reset to default view."""
-        self.current_centre = -0.5 + 0j
-        self.current_L = 3.0
+        if self.fractal_type.get() == "Burning Ship":
+            self.current_centre = -0.5 - 0.5j
+            self.current_L = 4.0
+        else:
+            self.current_centre = -0.5 + 0j
+            self.current_L = 3.0
         self.history = []
         self.history_index = -1
         self.generate_and_display()

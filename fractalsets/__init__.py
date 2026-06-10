@@ -5,6 +5,7 @@ __author__ = "Diogo Ribeiro"
 __all__ = [
     "MandelbrotGenerator",
     "JuliaGenerator",
+    "BurningShipGenerator",
     "FractalVisualizer",
     "FractalAnimator",
     "Fractal3DRenderer",
@@ -12,12 +13,13 @@ __all__ = [
     "launch_gui",
     "mandel_iterate",
     "julia_iterate",
+    "burning_ship_iterate",
     "export_fractal",
     "FractalGallery",
 ]
 
-from .core.generators import MandelbrotGenerator, JuliaGenerator
-from .core.iterators import mandel_iterate, julia_iterate
+from .core.generators import BurningShipGenerator, JuliaGenerator, MandelbrotGenerator
+from .core.iterators import burning_ship_iterate, julia_iterate, mandel_iterate
 from .visualization import (
     Fractal3DRenderer,
     FractalAnimator,

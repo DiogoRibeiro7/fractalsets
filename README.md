@@ -170,7 +170,7 @@ Known areas still worth improving:
 - README examples are now aligned with the shipped API, but the broader docs set still needs cleanup
 - the GUI and renderer modules need deeper behavioral tests
 - advanced analysis works best when installed via the `analysis` extra
-- Burning Ship and other additional fractal types are not implemented yet
+- additional fractal types beyond Mandelbrot, Julia, and Burning Ship are not implemented yet
 
 ## Development
 

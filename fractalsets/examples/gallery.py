@@ -1,7 +1,7 @@
 """Predefined fractal gallery and examples."""
 
 import numpy as np
-from ..core.generators import MandelbrotGenerator, JuliaGenerator
+from ..core.generators import BurningShipGenerator, JuliaGenerator, MandelbrotGenerator
 from ..visualization.plotters import FractalVisualizer
 
 
@@ -24,6 +24,12 @@ class FractalGallery:
         'mini_mandelbrot': {'centre': -0.743643887037151 + 0.131825890901124j, 'L': 0.000001},
         'spiral': {'centre': -0.761574 - 0.0847596j, 'L': 0.001},
         'elephant_valley': {'centre': 0.282 - 0.01j, 'L': 0.005},
+    }
+
+    BURNING_SHIP_LOCATIONS = {
+        'full_set': {'centre': -0.5 - 0.5j, 'L': 4.0},
+        'classic_ship': {'centre': -1.75 - 0.03j, 'L': 0.08},
+        'harbor': {'centre': -1.8 - 0.01j, 'L': 0.03},
     }
 
     @classmethod
@@ -73,3 +79,14 @@ class FractalGallery:
         vis.plot_comparison(mandel_images, mandel_titles,
                             cmap='fractal_fire',
                             suptitle="Mandelbrot Set Exploration")
+
+        print("\nGenerating Burning Ship exploration...")
+        ship_gen = BurningShipGenerator(width=600, height=600, max_iter=256)
+        ship_images, ship_titles = [], []
+        for name, params in cls.BURNING_SHIP_LOCATIONS.items():
+            ship_gen.generate(**params)
+            ship_images.append(ship_gen.get_image())
+            ship_titles.append(name.replace('_', ' ').title())
+        vis.plot_comparison(ship_images, ship_titles,
+                            cmap='fractal_fire',
+                            suptitle="Burning Ship Exploration")

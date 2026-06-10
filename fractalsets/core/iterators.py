@@ -41,6 +41,21 @@ def julia_iterate(z: complex, C: complex, max_iter: int = 256,
 
 
 @jit(nopython=True)
+def burning_ship_iterate(c: complex, max_iter: int = 256,
+                         escape_radius: float = 2.0) -> int:
+    """
+    Compute iterations before escape for Burning Ship fractal.
+    """
+    z = 0.0 + 0.0j
+    for i in range(max_iter):
+        z = complex(abs(z.real), abs(z.imag))
+        z = z * z + c
+        if z.real * z.real + z.imag * z.imag > escape_radius * escape_radius:
+            return i
+    return max_iter
+
+
+@jit(nopython=True)
 def smooth_mandel_iterate(z_0: complex, max_iter: int = 256,
                           escape_radius: float = 2.0) -> float:
     """
@@ -71,6 +86,23 @@ def smooth_julia_iterate(z: complex, C: complex, max_iter: int = 256,
     return float(max_iter)
 
 
+@jit(nopython=True)
+def smooth_burning_ship_iterate(c: complex, max_iter: int = 256,
+                                escape_radius: float = 2.0) -> float:
+    """
+    Smooth iteration count for Burning Ship fractal.
+    """
+    z = 0.0 + 0.0j
+    for i in range(max_iter):
+        z = complex(abs(z.real), abs(z.imag))
+        z = z * z + c
+        if z.real * z.real + z.imag * z.imag > escape_radius * escape_radius:
+            log_zn = np.log(z.real * z.real + z.imag * z.imag) / 2
+            nu = np.log(log_zn / np.log(2)) / np.log(2)
+            return i + 1 - nu
+    return float(max_iter)
+
+
 @jit(nopython=True, parallel=True)
 def compute_mandelbrot_array(width: int, height: int,
                              xmin: float, xmax: float,
@@ -89,6 +121,28 @@ def compute_mandelbrot_array(width: int, height: int,
             image[i, j] = (
                 smooth_mandel_iterate(z_0, max_iter)
                 if smooth else mandel_iterate(z_0, max_iter)
+            )
+    return image
+
+
+@jit(nopython=True, parallel=True)
+def compute_burning_ship_array(width: int, height: int,
+                               xmin: float, xmax: float,
+                               ymin: float, ymax: float,
+                               max_iter: int = 256,
+                               smooth: bool = False) -> np.ndarray:
+    """
+    Compute Burning Ship fractal for an image grid.
+    """
+    image = np.zeros((height, width), dtype=np.float64)
+    for i in prange(height):
+        y = ymin + (ymax - ymin) * i / (height - 1)
+        for j in range(width):
+            x = xmin + (xmax - xmin) * j / (width - 1)
+            c = complex(x, y)
+            image[i, j] = (
+                smooth_burning_ship_iterate(c, max_iter)
+                if smooth else burning_ship_iterate(c, max_iter)
             )
     return image
 
