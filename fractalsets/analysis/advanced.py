@@ -11,7 +11,11 @@ class FractalAnalyzer:
     @staticmethod
     def detect_boundary(image: np.ndarray, threshold: float = 0.9) -> np.ndarray:
         """Detect fractal boundary using edge detection."""
-        normalized = image / np.max(image)
+        max_value = np.max(image)
+        if max_value <= 0:
+            return np.zeros_like(image, dtype=bool)
+
+        normalized = image / max_value
         edges_x = ndimage.sobel(normalized, axis=0)
         edges_y = ndimage.sobel(normalized, axis=1)
         boundary = np.hypot(edges_x, edges_y)
@@ -23,11 +27,27 @@ class FractalAnalyzer:
         box_sizes: Optional[List[int]] = None,
     ) -> Tuple[float, Dict]:
         """Calculate Hausdorff dimension using box-counting."""
+        max_value = np.max(image)
+        if max_value <= 0:
+            return 0.0, {
+                "box_sizes": [],
+                "counts": [],
+                "coefficients": np.array([0.0, 0.0]),
+                "r_squared": 1.0,
+            }
+
         if box_sizes is None:
             max_size = min(image.shape) // 4
+            if max_size < 2:
+                return 0.0, {
+                    "box_sizes": [],
+                    "counts": [],
+                    "coefficients": np.array([0.0, 0.0]),
+                    "r_squared": 1.0,
+                }
             box_sizes = [2**i for i in range(1, int(np.log2(max_size)))]
 
-        binary = (image > 0.5 * np.max(image)).astype(int)
+        binary = (image > 0.5 * max_value).astype(int)
         counts = []
         for size in box_sizes:
             count = 0
@@ -38,13 +58,24 @@ class FractalAnalyzer:
                         count += 1
             counts.append(count)
 
-        coeffs = np.polyfit(np.log(box_sizes), np.log(counts), 1)
+        valid_pairs = [(size, count) for size, count in zip(box_sizes, counts) if count > 0]
+        if len(valid_pairs) < 2:
+            return 0.0, {
+                "box_sizes": box_sizes,
+                "counts": counts,
+                "coefficients": np.array([0.0, 0.0]),
+                "r_squared": 1.0,
+            }
+
+        valid_sizes = [size for size, _ in valid_pairs]
+        valid_counts = [count for _, count in valid_pairs]
+        coeffs = np.polyfit(np.log(valid_sizes), np.log(valid_counts), 1)
         dimension = -coeffs[0]
         details = {
             "box_sizes": box_sizes,
             "counts": counts,
             "coefficients": coeffs,
-            "r_squared": calculate_r_squared(box_sizes, counts, coeffs),
+            "r_squared": calculate_r_squared(valid_sizes, valid_counts, coeffs),
         }
         return dimension, details
 
@@ -109,7 +140,11 @@ class FractalAnalyzer:
         """Compute a multifractal spectrum."""
         q_values = np.linspace(q_range[0], q_range[1], num_q)
         Dq_values = []
-        prob = image / np.sum(image)
+        total = np.sum(image)
+        if total <= 0:
+            return q_values, np.zeros_like(q_values, dtype=np.float64)
+
+        prob = image / total
 
         for q in q_values:
             if q == 1:
@@ -130,22 +165,29 @@ class FractalAnalyzer:
         """Detect coarse image symmetries."""
         h, w = image.shape
         symmetries = {}
+        max_value = np.max(image)
+        if max_value <= 0:
+            return {
+                "vertical": 1.0,
+                "horizontal": 1.0,
+                "rotational_180": 1.0,
+            }
 
         left = image[:, : w // 2]
         right = np.fliplr(image[:, w // 2 :])
         min_width = min(left.shape[1], right.shape[1])
         v_diff = np.mean(np.abs(left[:, :min_width] - right[:, :min_width]))
-        symmetries["vertical"] = 1 - v_diff / np.max(image)
+        symmetries["vertical"] = 1 - v_diff / max_value
 
         top = image[: h // 2, :]
         bottom = np.flipud(image[h // 2 :, :])
         min_height = min(top.shape[0], bottom.shape[0])
         h_diff = np.mean(np.abs(top[:min_height, :] - bottom[:min_height, :]))
-        symmetries["horizontal"] = 1 - h_diff / np.max(image)
+        symmetries["horizontal"] = 1 - h_diff / max_value
 
         rotated = np.rot90(image, 2)
         r_diff = np.mean(np.abs(image - rotated))
-        symmetries["rotational_180"] = 1 - r_diff / np.max(image)
+        symmetries["rotational_180"] = 1 - r_diff / max_value
         return symmetries
 
     @staticmethod
@@ -184,18 +226,31 @@ class FractalAnalyzer:
         levels: Optional[List[float]] = None,
     ) -> List[np.ndarray]:
         """Extract contour lines at different iteration levels."""
-        import cv2
+        max_value = np.max(image)
+        min_value = np.min(image)
+        if max_value <= min_value:
+            return []
 
         if levels is None:
-            levels = np.linspace(0.1, 0.9, 9) * np.max(image)
+            levels = np.linspace(0.1, 0.9, 9) * max_value
+
+        try:
+            import cv2
+        except ImportError:
+            from skimage import measure
+
+            all_contours = []
+            for level in levels:
+                all_contours.extend(measure.find_contours(image, level))
+            return all_contours
 
         normalized = (
-            (image - np.min(image)) / (np.max(image) - np.min(image)) * 255
+            (image - min_value) / (max_value - min_value) * 255
         ).astype(np.uint8)
 
         all_contours = []
         for level in levels:
-            threshold_level = int(level / np.max(image) * 255)
+            threshold_level = int(level / max_value * 255)
             _, binary = cv2.threshold(
                 normalized, threshold_level, 255, cv2.THRESH_BINARY
             )
