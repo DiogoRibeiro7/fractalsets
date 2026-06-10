@@ -25,10 +25,9 @@ class FractalExplorerGUI:
         self.root = root
         self.root.title("FractalSets Explorer")
         self.root.geometry("1200x800")
-        
-        from ..core.generators import MandelbrotGenerator
-        self.generator = MandelbrotGenerator(width=600, height=600)
-        
+
+        self.generator = None
+
         self.history = []
         self.history_index = -1
         
@@ -49,7 +48,7 @@ class FractalExplorerGUI:
         ttk.Label(control_frame, text="Fractal Type:").pack()
         self.fractal_type = ttk.Combobox(
             control_frame,
-            values=["Mandelbrot", "Julia", "Burning Ship"],
+            values=["Mandelbrot", "Julia"],
             state="readonly"
         )
         self.fractal_type.set("Mandelbrot")
@@ -177,21 +176,13 @@ class FractalExplorerGUI:
         # Get parameters
         width, height = map(int, self.resolution.get().split('x'))
         max_iter = int(self.max_iter_scale.get())
-        
-        # Update generator
-        self.generator.width = width
-        self.generator.height = height
-        self.generator.max_iter = max_iter
-        
-        # Generate
+
         if not hasattr(self, 'current_centre'):
             self.current_centre = -0.5 + 0j
             self.current_L = 3.0
-        
-        self.generator.generate(
-            centre=self.current_centre,
-            L=self.current_L
-        )
+
+        self._ensure_generator(width, height, max_iter)
+        self.generator.generate(centre=self.current_centre, L=self.current_L)
         
         # Display
         self.ax.clear()
@@ -276,6 +267,29 @@ class FractalExplorerGUI:
             self.julia_frame.pack_forget()
         
         self.reset_view()
+
+    def _ensure_generator(self, width: int, height: int, max_iter: int):
+        """Create or update the generator for the selected fractal type."""
+        from ..core.generators import JuliaGenerator, MandelbrotGenerator
+
+        fractal_type = self.fractal_type.get()
+        if fractal_type == "Julia":
+            C = complex(float(self.julia_real.get()), float(self.julia_imag.get()))
+            if not isinstance(self.generator, JuliaGenerator):
+                self.generator = JuliaGenerator(C, width=width, height=height, max_iter=max_iter)
+            else:
+                self.generator.width = width
+                self.generator.height = height
+                self.generator.max_iter = max_iter
+                self.generator.set_constant(C)
+            return
+
+        if not isinstance(self.generator, MandelbrotGenerator):
+            self.generator = MandelbrotGenerator(width=width, height=height, max_iter=max_iter)
+        else:
+            self.generator.width = width
+            self.generator.height = height
+            self.generator.max_iter = max_iter
     
     def load_preset(self, preset_name: str):
         """Load a preset location."""

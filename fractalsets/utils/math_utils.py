@@ -8,8 +8,21 @@ def calculate_fractal_dimension(image: np.ndarray, threshold: float = 0.5) -> fl
     """
     Estimate fractal dimension using box-counting.
     """
-    binary = (image > threshold * np.max(image)).astype(int)
-    sizes = 2 ** np.arange(1, int(np.log2(min(binary.shape))) - 1)
+    max_value = np.max(image)
+    if max_value <= 0:
+        return 0.0
+
+    binary = (image > threshold * max_value).astype(int)
+    if not np.any(binary):
+        return 0.0
+    if np.all(binary):
+        return 2.0
+
+    max_power = int(np.floor(np.log2(min(binary.shape))))
+    if max_power <= 1:
+        return float(np.ndim(binary))
+
+    sizes = 2 ** np.arange(1, max_power)
     counts = []
     for size in sizes:
         count = 0
@@ -19,8 +32,19 @@ def calculate_fractal_dimension(image: np.ndarray, threshold: float = 0.5) -> fl
                 if np.sum(box) > 0:
                     count += 1
         counts.append(count)
-    coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
-    return -coeffs[0]
+
+    valid_sizes = []
+    valid_counts = []
+    for size, count in zip(sizes, counts):
+        if count > 0:
+            valid_sizes.append(size)
+            valid_counts.append(count)
+
+    if len(valid_counts) < 2:
+        return 0.0
+
+    coeffs = np.polyfit(np.log(valid_sizes), np.log(valid_counts), 1)
+    return float(abs(coeffs[0]))
 
 
 def find_period(z_0: complex, C: complex, max_iter: int = 1000) -> int:

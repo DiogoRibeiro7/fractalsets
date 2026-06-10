@@ -1,19 +1,35 @@
 """FractalSets package initialization."""
 
 __version__ = "1.0.0"
-__author__ = "FractalSets Team"
+__author__ = "Diogo Ribeiro"
 __all__ = [
-    'MandelbrotGenerator',
-    'JuliaGenerator',
-    'FractalVisualizer',
-    'mandel_iterate',
-    'julia_iterate',
-    'export_fractal',
-    'FractalGallery'
+    "MandelbrotGenerator",
+    "JuliaGenerator",
+    "FractalVisualizer",
+    "FractalAnimator",
+    "Fractal3DRenderer",
+    "StereoscopicRenderer",
+    "launch_gui",
+    "mandel_iterate",
+    "julia_iterate",
+    "export_fractal",
+    "FractalGallery",
 ]
 
 from .core.generators import MandelbrotGenerator, JuliaGenerator
 from .core.iterators import mandel_iterate, julia_iterate
-from .visualization.plotters import FractalVisualizer
+from .visualization import (
+    Fractal3DRenderer,
+    FractalAnimator,
+    FractalVisualizer,
+    StereoscopicRenderer,
+)
 from .utils.export import export_fractal
 from .examples.gallery import FractalGallery
+
+
+def launch_gui():
+    """Launch the GUI without importing tkinter during package import."""
+    from .gui import launch_gui as _launch_gui
+
+    return _launch_gui()

@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-performance = ["numba>=0.54.0"]
+performance = ["numba>=0.59,<0.62"]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
@@ -42,10 +42,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/fractalsets"
+Homepage = "https://github.com/DiogoRibeiro7/fractalsets"
 Documentation = "https://fractalsets.readthedocs.io"
-Repository = "https://github.com/yourusername/fractalsets"
-"Bug Tracker" = "https://github.com/yourusername/fractalsets/issues"
+Repository = "https://github.com/DiogoRibeiro7/fractalsets"
+"Bug Tracker" = "https://github.com/DiogoRibeiro7/fractalsets/issues"
 
 [project.scripts]
 fractalsets-demo = "fractalsets.examples.advanced_examples:run_all_examples"

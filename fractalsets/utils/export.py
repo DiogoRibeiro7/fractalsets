@@ -3,6 +3,7 @@
 import numpy as np
 from PIL import Image
 from typing import Optional
+from ..visualization.colormaps import PREDEFINED_COLORMAPS
 
 
 def export_fractal(image: np.ndarray, filename: str,
@@ -18,7 +19,11 @@ def export_fractal(image: np.ndarray, filename: str,
 
     if cmap:
         import matplotlib.pyplot as plt
-        colormap = plt.get_cmap(cmap)
+        colormap = PREDEFINED_COLORMAPS.get(cmap)
+        if isinstance(colormap, str):
+            colormap = plt.get_cmap(colormap)
+        elif colormap is None:
+            colormap = plt.get_cmap(cmap)
         img_colored = colormap(img_8bit)
         img_colored = (img_colored[:, :, :3] * 255).astype(np.uint8)
         pil_img = Image.fromarray(img_colored)

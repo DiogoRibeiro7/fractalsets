@@ -8,12 +8,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="fractalsets",
     version="1.0.0",
-    author="FractalSets Development Team",
-    author_email="dev@fractalsets.org",
+    author="Diogo Ribeiro",
+    author_email="dfr@esmad.ipp.pt",
     description="A comprehensive Python package for generating and visualizing Mandelbrot and Julia set fractals",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/fractalsets",
+    url="https://github.com/DiogoRibeiro7/fractalsets",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -23,19 +23,19 @@ setup(
         "Topic :: Scientific/Engineering :: Visualization",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "numpy>=1.20.0",
         "matplotlib>=3.3.0",
         "Pillow>=8.0.0",
     ],
     extras_require={
-        "performance": ["numba>=0.54.0"],
+        "performance": ["numba>=0.59,<0.62"],
         "dev": [
             "pytest>=6.0",
             "pytest-cov>=2.0",
@@ -44,7 +44,7 @@ setup(
             "sphinx>=4.0",
         ],
         "all": [
-            "numba>=0.54.0",
+            "numba>=0.59,<0.62",
             "pytest>=6.0",
             "pytest-cov>=2.0",
             "black>=21.0",

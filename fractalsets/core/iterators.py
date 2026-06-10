@@ -1,8 +1,16 @@
 """Core iteration functions for fractal computation."""
 
 import numpy as np
-from numba import jit, prange
-from typing import Union, Tuple
+try:
+    from numba import jit, prange
+except Exception:  # pragma: no cover - exercised indirectly in import smoke tests
+    def jit(*args, **kwargs):
+        """Fallback decorator when numba is unavailable."""
+        def decorator(func):
+            return func
+        return decorator
+
+    prange = range
 
 
 @jit(nopython=True)
