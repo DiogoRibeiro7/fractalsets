@@ -1,11 +1,13 @@
 """Tests for non-interactive GUI controller logic."""
 
+from types import SimpleNamespace
+
 from fractalsets.core.generators import (
     BurningShipGenerator,
     JuliaGenerator,
     MandelbrotGenerator,
 )
-from fractalsets.gui.interactive_explorer import FractalExplorerGUI
+from fractalsets.gui.interactive_explorer import FractalExplorerGUI, launch_gui
 
 
 class StubValue:
@@ -54,6 +56,16 @@ class StubButton:
 
     def destroy(self):
         self.destroyed = True
+
+
+class StubRoot:
+    """Minimal stand-in for a Tk root."""
+
+    def __init__(self):
+        self.mainloop_calls = 0
+
+    def mainloop(self):
+        self.mainloop_calls += 1
 
 
 def make_gui():
@@ -257,3 +269,152 @@ class TestGUIHelpers:
         assert gui.julia_frame.forget_calls == 1
         assert refresh_calls == ["refresh", "refresh"]
         assert reset_calls == ["reset", "reset"]
+
+    def test_on_click_ignores_events_outside_axes(self):
+        gui = make_gui()
+        gui.ax = object()
+        gui.save_to_history = lambda: (_ for _ in ()).throw(AssertionError("should not save"))
+
+        gui.on_click(SimpleNamespace(inaxes=None, button=1))
+
+    def test_on_click_zoom_in_updates_view(self):
+        gui = make_gui()
+        gui.ax = object()
+        gui.generator = MandelbrotGenerator(width=100, height=100, max_iter=64)
+        gui.generator.bounds = (-2.0, 1.0, -1.5, 1.5)
+        gui.current_L = 3.0
+        history_calls = []
+        render_calls = []
+        gui.save_to_history = lambda: history_calls.append("saved")
+        gui.generate_and_display = lambda: render_calls.append("render")
+
+        event = SimpleNamespace(inaxes=gui.ax, button=1, xdata=50, ydata=50)
+        gui.on_click(event)
+
+        assert history_calls == ["saved"]
+        assert render_calls == ["render"]
+        assert gui.current_centre == complex(-0.5, 0.0)
+        assert gui.current_L == 1.5
+
+    def test_on_click_zoom_out_updates_view(self):
+        gui = make_gui()
+        gui.ax = object()
+        gui.generator = MandelbrotGenerator(width=100, height=100, max_iter=64)
+        gui.generator.bounds = (-2.0, 1.0, -1.5, 1.5)
+        gui.current_L = 3.0
+        gui.save_to_history = lambda: None
+        render_calls = []
+        gui.generate_and_display = lambda: render_calls.append("render")
+
+        event = SimpleNamespace(inaxes=gui.ax, button=3, xdata=50, ydata=50)
+        gui.on_click(event)
+
+        assert render_calls == ["render"]
+        assert gui.current_L == 6.0
+
+    def test_on_scroll_updates_scale(self):
+        gui = make_gui()
+        gui.ax = object()
+        gui.current_L = 3.0
+        history_calls = []
+        render_calls = []
+        gui.save_to_history = lambda: history_calls.append("saved")
+        gui.generate_and_display = lambda: render_calls.append("render")
+
+        gui.on_scroll(SimpleNamespace(inaxes=gui.ax, button="up"))
+        gui.on_scroll(SimpleNamespace(inaxes=gui.ax, button="down"))
+
+        assert history_calls == ["saved", "saved"]
+        assert render_calls == ["render", "render"]
+        assert abs(gui.current_L - 3.0) < 1e-9
+
+    def test_on_colormap_change_regenerates(self):
+        gui = make_gui()
+        calls = []
+        gui.generate_and_display = lambda: calls.append("render")
+
+        gui.on_colormap_change(None)
+
+        assert calls == ["render"]
+
+    def test_save_image_exports_and_notifies(self, monkeypatch):
+        gui = make_gui()
+        gui.colormap = StubValue("fractal_default")
+        gui.generator = MandelbrotGenerator(width=20, height=20, max_iter=32)
+        gui.generator.image = [[1, 2], [3, 4]]
+        exported = {}
+        notified = {}
+
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.filedialog.asksaveasfilename",
+            lambda **kwargs: "output.png",
+        )
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.export_fractal",
+            lambda image, filename, cmap=None, dpi=None: exported.update(
+                {"image": image, "filename": filename, "cmap": cmap, "dpi": dpi}
+            ),
+            raising=False,
+        )
+        monkeypatch.setattr(
+            "fractalsets.utils.export.export_fractal",
+            lambda image, filename, cmap=None, dpi=None: exported.update(
+                {"image": image, "filename": filename, "cmap": cmap, "dpi": dpi}
+            ),
+        )
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.messagebox.showinfo",
+            lambda title, message: notified.update({"title": title, "message": message}),
+        )
+
+        gui.save_image()
+
+        assert exported["filename"] == "output.png"
+        assert exported["cmap"] == "fractal_default"
+        assert exported["dpi"] == 300
+        assert notified["title"] == "Success"
+        assert "output.png" in notified["message"]
+
+    def test_save_image_noop_when_cancelled(self, monkeypatch):
+        gui = make_gui()
+        gui.colormap = StubValue("fractal_default")
+        gui.generator = MandelbrotGenerator(width=20, height=20, max_iter=32)
+        gui.generator.image = [[1, 2], [3, 4]]
+        notified = []
+
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.filedialog.asksaveasfilename",
+            lambda **kwargs: "",
+        )
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.messagebox.showinfo",
+            lambda *args, **kwargs: notified.append("called"),
+        )
+
+        gui.save_image()
+
+        assert notified == []
+
+
+class TestLaunchGUI:
+    """Test GUI launch entry point."""
+
+    def test_launch_gui_constructs_app_and_runs_mainloop(self, monkeypatch):
+        root = StubRoot()
+        created = {}
+
+        monkeypatch.setattr("fractalsets.gui.interactive_explorer.tk.Tk", lambda: root)
+
+        class FakeApp:
+            def __init__(self, passed_root):
+                created["root"] = passed_root
+
+        monkeypatch.setattr(
+            "fractalsets.gui.interactive_explorer.FractalExplorerGUI",
+            FakeApp,
+        )
+
+        launch_gui()
+
+        assert created["root"] is root
+        assert root.mainloop_calls == 1
