@@ -6,6 +6,7 @@ from typing import Iterable, Optional
 from .core.generators import BurningShipGenerator, JuliaGenerator, MandelbrotGenerator
 from .examples.gallery import FractalGallery
 from .utils.export import export_fractal
+from .visualization.animator import FractalAnimator
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,6 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ymax", type=float, help="Maximum imaginary bound.")
     parser.add_argument("--cmap", default="fractal_default", help="Colormap to use.")
     parser.add_argument("--dpi", type=int, default=300, help="Export DPI.")
+    parser.add_argument("--fps", type=int, default=30, help="Animation frames per second.")
     parser.add_argument(
         "--no-log-scale",
         action="store_true",
@@ -51,6 +53,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--list-presets",
         action="store_true",
         help="List presets for the selected fractal type and exit.",
+    )
+    parser.add_argument(
+        "--animate",
+        choices=["zoom", "julia-morph"],
+        help="Render an animation instead of a single image.",
+    )
+    parser.add_argument(
+        "--frames",
+        type=int,
+        default=60,
+        help="Number of frames for animation modes.",
+    )
+    parser.add_argument(
+        "--zoom-factor",
+        type=float,
+        default=1.05,
+        help="Per-frame zoom factor for zoom animations.",
+    )
+    parser.add_argument(
+        "--julia-end-real",
+        type=float,
+        help="Julia morph target constant real part.",
+    )
+    parser.add_argument(
+        "--julia-end-imag",
+        type=float,
+        help="Julia morph target constant imaginary part.",
     )
     parser.add_argument("--julia-real", type=float, help="Julia constant real part.")
     parser.add_argument("--julia-imag", type=float, help="Julia constant imaginary part.")
@@ -72,6 +101,8 @@ def _validate_bounds(args: argparse.Namespace):
     provided = [value is not None for value in bounds]
     if any(provided) and not all(provided):
         raise ValueError("Explicit bounds require --xmin, --xmax, --ymin, and --ymax together.")
+    if args.animate == "zoom" and args.xmin is not None:
+        raise ValueError("Zoom animation does not support explicit bounds; use centre/L or a preset.")
 
 
 def _resolve_preset(args: argparse.Namespace):
@@ -134,6 +165,49 @@ def _generate_image(generator, args: argparse.Namespace):
     return generator.generate(centre=centre, L=args.L)
 
 
+def _resolve_view(args: argparse.Namespace):
+    """Resolve the centre and side length for single-image and zoom rendering."""
+    preset = _resolve_preset(args)
+    if preset is not None and args.fractal != "julia":
+        return preset["centre"], preset["L"]
+    return complex(args.centre_real, args.centre_imag), args.L
+
+
+def _run_animation(generator, args: argparse.Namespace) -> int:
+    """Run an animation mode from CLI arguments."""
+    animator = FractalAnimator(generator, fps=args.fps, dpi=args.dpi)
+
+    if args.animate == "zoom":
+        centre, start_L = _resolve_view(args)
+        animator.create_zoom_animation(
+            target=centre,
+            num_frames=args.frames,
+            zoom_factor=args.zoom_factor,
+            start_L=start_L,
+            output_path=args.output,
+            cmap=args.cmap,
+        )
+        return 0
+
+    if args.animate == "julia-morph":
+        if args.fractal != "julia":
+            raise ValueError("Julia morph animation requires --fractal julia.")
+        if args.julia_end_real is None or args.julia_end_imag is None:
+            raise ValueError(
+                "Julia morph animation requires --julia-end-real and --julia-end-imag."
+            )
+        animator.create_julia_morph(
+            start_C=generator.C,
+            end_C=complex(args.julia_end_real, args.julia_end_imag),
+            num_frames=args.frames,
+            output_path=args.output,
+            cmap=args.cmap,
+        )
+        return 0
+
+    raise ValueError(f"Unsupported animation mode '{args.animate}'.")
+
+
 def _list_presets(args: argparse.Namespace):
     """Print presets for the selected fractal type."""
     for name in sorted(_get_presets_for_fractal(args.fractal)):
@@ -153,6 +227,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     try:
         generator = _build_generator(args)
+        if args.animate:
+            return _run_animation(generator, args)
         image = _generate_image(generator, args)
     except ValueError as exc:
         parser.error(str(exc))

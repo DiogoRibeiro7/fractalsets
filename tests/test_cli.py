@@ -3,6 +3,7 @@
 import pytest
 
 from fractalsets.cli import build_parser, main
+from fractalsets.core.generators import JuliaGenerator
 from fractalsets.core.generators import BurningShipGenerator, JuliaGenerator, MandelbrotGenerator
 
 
@@ -222,3 +223,180 @@ def test_main_requires_output_for_rendering():
     """CLI should still require an output path for rendering commands."""
     with pytest.raises(SystemExit):
         main([])
+
+
+def test_main_runs_zoom_animation(monkeypatch):
+    """CLI should dispatch zoom animations to the animator."""
+    calls = {}
+
+    monkeypatch.setattr(
+        "fractalsets.cli.FractalAnimator.create_zoom_animation",
+        lambda self, target, num_frames, zoom_factor, start_L, output_path, cmap: calls.update(
+            {
+                "target": target,
+                "num_frames": num_frames,
+                "zoom_factor": zoom_factor,
+                "start_L": start_L,
+                "output_path": output_path,
+                "cmap": cmap,
+            }
+        ),
+    )
+
+    exit_code = main(
+        [
+            "--animate",
+            "zoom",
+            "--output",
+            "zoom.gif",
+            "--frames",
+            "12",
+            "--zoom-factor",
+            "1.2",
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["target"] == -0.5 + 0j
+    assert calls["num_frames"] == 12
+    assert calls["zoom_factor"] == 1.2
+    assert calls["start_L"] == 3.0
+    assert calls["output_path"] == "zoom.gif"
+
+
+def test_main_runs_zoom_animation_for_preset(monkeypatch):
+    """CLI zoom animation should use preset view parameters when present."""
+    calls = {}
+
+    monkeypatch.setattr(
+        "fractalsets.cli.FractalAnimator.create_zoom_animation",
+        lambda self, target, num_frames, zoom_factor, start_L, output_path, cmap: calls.update(
+            {
+                "target": target,
+                "start_L": start_L,
+                "output_path": output_path,
+            }
+        ),
+    )
+
+    exit_code = main(
+        [
+            "--fractal",
+            "burning-ship",
+            "--preset",
+            "classic_ship",
+            "--animate",
+            "zoom",
+            "--output",
+            "ship_zoom.gif",
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["target"] == -1.75 - 0.03j
+    assert calls["start_L"] == 0.08
+    assert calls["output_path"] == "ship_zoom.gif"
+
+
+def test_main_runs_julia_morph_animation(monkeypatch):
+    """CLI should dispatch Julia morph animations with start and end constants."""
+    calls = {}
+
+    monkeypatch.setattr(
+        "fractalsets.cli.FractalAnimator.create_julia_morph",
+        lambda self, start_C, end_C, num_frames, output_path, cmap: calls.update(
+            {
+                "start_C": start_C,
+                "end_C": end_C,
+                "num_frames": num_frames,
+                "output_path": output_path,
+                "cmap": cmap,
+            }
+        ),
+    )
+
+    exit_code = main(
+        [
+            "--fractal",
+            "julia",
+            "--julia-real",
+            "-0.4",
+            "--julia-imag",
+            "0.6",
+            "--animate",
+            "julia-morph",
+            "--julia-end-real",
+            "-0.8",
+            "--julia-end-imag",
+            "0.156",
+            "--frames",
+            "8",
+            "--output",
+            "morph.gif",
+        ]
+    )
+
+    assert exit_code == 0
+    assert calls["start_C"] == -0.4 + 0.6j
+    assert calls["end_C"] == -0.8 + 0.156j
+    assert calls["num_frames"] == 8
+    assert calls["output_path"] == "morph.gif"
+
+
+def test_main_rejects_julia_morph_without_end_constant():
+    """CLI should reject incomplete Julia morph parameters."""
+    with pytest.raises(SystemExit):
+        main(
+            [
+                "--fractal",
+                "julia",
+                "--julia-real",
+                "-0.4",
+                "--julia-imag",
+                "0.6",
+                "--animate",
+                "julia-morph",
+                "--output",
+                "morph.gif",
+            ]
+        )
+
+
+def test_main_rejects_julia_morph_for_non_julia():
+    """CLI should reject Julia morph requests for non-Julia fractals."""
+    with pytest.raises(SystemExit):
+        main(
+            [
+                "--fractal",
+                "mandelbrot",
+                "--animate",
+                "julia-morph",
+                "--julia-end-real",
+                "-0.8",
+                "--julia-end-imag",
+                "0.156",
+                "--output",
+                "bad.gif",
+            ]
+        )
+
+
+def test_main_rejects_zoom_with_explicit_bounds():
+    """CLI should reject zoom animation requests with explicit bounds."""
+    with pytest.raises(SystemExit):
+        main(
+            [
+                "--animate",
+                "zoom",
+                "--xmin",
+                "-2.0",
+                "--xmax",
+                "1.0",
+                "--ymin",
+                "-1.5",
+                "--ymax",
+                "1.5",
+                "--output",
+                "bad.gif",
+            ]
+        )

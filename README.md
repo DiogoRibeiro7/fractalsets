@@ -108,6 +108,18 @@ Render a named preset:
 fractalsets-render --fractal mandelbrot --preset seahorse_valley --output seahorse.png --width 1600 --height 1600 --max-iter 512 --cmap fractal_fire
 ```
 
+Create a zoom animation from the CLI:
+
+```bash
+fractalsets-render --fractal mandelbrot --preset seahorse_valley --animate zoom --frames 80 --zoom-factor 1.08 --output seahorse_zoom.gif --cmap fractal_fire
+```
+
+Create a Julia morph animation from the CLI:
+
+```bash
+fractalsets-render --fractal julia --preset dragon --animate julia-morph --julia-end-real -0.4 --julia-end-imag 0.6 --frames 80 --output julia_morph.gif
+```
+
 Launch the GUI explorer:
 
 ```python
